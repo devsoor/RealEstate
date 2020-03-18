@@ -1,0 +1,66 @@
+.row.display-flex {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .row.display-flex > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
+  }
+.modal-header {
+  background-color: #2f74a3;
+  color: white;
+}
+
+.modal-header .close {
+  color: white;
+  opacity: 1;
+}
+.btn-group-vertical.cma-criteria {
+  width: 100%;
+}
+.btn-group-vertical.cma-criteria label.btn {
+    padding: 9px 18px;
+    line-height: 2;
+    border: 1px solid silver;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    width: 100%;
+    -webkit-transition: .5s;
+    -moz-transition: .5s;
+    -o-transition: .5s;
+    transition: .5s;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.btn-group-vertical.cma-criteria label.btn.active {
+    background: #4a92ff;
+    color: #fff;
+}
+
+.btn-group-vertical.cma-criteria label.btn .text {
+    width: 100%;
+    display: inline-block;
+    max-width: calc(100% - 50px);
+    text-shadow: none;
+}
+
+.btn-group-vertical.cma-criteria label.btn .icon {
+  border-radius: 50%;
+  color: #83b73a;
+  border: 2px solid;
+  width: 35px;
+  height: 35px;
+  padding: 6px;
+  line-height: 27px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.btn-group-vertical.cma-criteria label.btn.active .icon {
+  color: #fff;
+  border-color: #fff;
+  background-color: rgba(255,255,255,.49);
+  text-shadow: 0 0 15px #fff;
+}

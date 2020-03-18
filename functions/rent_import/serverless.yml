@@ -1,0 +1,177 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: rentimport
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+resources:
+  Resources:
+    listingUpdatedGetRent:
+        Type: AWS::SQS::Queue
+        Properties:
+          QueueName: listingUpdatedGetRent-${self:provider.stage}
+          RedrivePolicy:
+            maxReceiveCount: 3
+            deadLetterTargetArn:
+              Fn::GetAtt:
+                - listingUpdatedGetRentDLQ
+                - Arn
+    listingUpdatedGetRentDLQ:
+        Type: AWS::SQS::Queue
+        Properties:
+          QueueName: listingUpdatedGetRentDLQ-${self:provider.stage}
+    updateRentQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          QueueName: updateRentQueue-${self:provider.stage}
+          VisibilityTimeout: 300
+          RedrivePolicy:
+            maxReceiveCount: 2
+            deadLetterTargetArn:
+              Fn::GetAtt:
+                - updateRentDLQ
+                - Arn
+    updateRentDLQ:
+        Type: AWS::SQS::Queue
+        Properties:
+          QueueName: updateRentDLQ-${self:provider.stage}
+    QueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+            Queues:
+              - "Ref" : "listingUpdatedGetRent"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                Sid: "allow-sns-messages"
+                Effect: "Allow"
+                Principal: "*"
+                Action: "sqs:SendMessage"
+                Resource:
+                  Fn::GetAtt:
+                    - listingUpdatedGetRent
+                    - Arn
+                Condition:
+                  ArnEquals:
+                    aws:SourceArn:
+                      'Fn::ImportValue': listingUpdatedSnsArn-${self:provider.stage}
+              
+    SnsSubscription:
+        Type: AWS::SNS::Subscription
+        Properties:
+          Protocol: sqs
+          Endpoint: !GetAtt listingUpdatedGetRent.Arn
+          TopicArn:
+            'Fn::ImportValue': listingUpdatedSnsArn-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  environment:
+    stage: ${self:provider.stage}
+    updateRentQueue:
+      Ref: updateRentQueue
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/RentalStats"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/PropertyTaxByCityRates"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Listings"
+    - Effect: "Allow"
+      Action: 
+        - "s3:Get*"
+      Resource:
+        - "arn:aws:s3:::realpeek-data"
+        - "arn:aws:s3:::realpeek-data/*"
+    - Effect: "Allow"
+      Action: 
+        - "lambda:InvokeFunction"
+        - "lambda:InvokeAsync"
+      Resource:
+        - "arn:aws:lambda:us-west-2:450322736372:function:search-${self:provider.stage}-searchInternal"
+        - "arn:aws:lambda:us-west-2:450322736372:function:rentimport-${self:provider.stage}-getRent"
+        - "arn:aws:lambda:us-west-2:450322736372:function:rentimport-${self:provider.stage}-updateRent"
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "sqs:GetQueueUrl"
+      Resource:
+        Fn::GetAtt:
+          - updateRentQueue
+          - Arn
+functions:
+  getRent:
+    handler: handler.get_rent
+    timeout: 30
+  updateRent:
+    handler: handler.update_rent
+    timeout: 30
+    reservedConcurrency: 5
+    events:
+      - sqs:
+          batchSize: 1
+          arn:
+            Fn::GetAtt:
+              - updateRentQueue
+              - Arn
+  listingUpdatedQueueHandler:
+    handler: handler.listing_updated_get_rent
+    timeout: 30
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - listingUpdatedGetRent
+              - Arn
+  updateAllRents:
+    handler: handler.update_all_rents
+    timeout: 300
+  importRentalStats:
+    handler: handler.import_rental_stats
+    timeout: 30
+    events:
+      - http:
+          path: rentometerstats
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  importPropertyTaxes:
+    handler: handler.import_property_taxes
+    timeout: 30
+    events:
+      - http:
+          path: taxes
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+plugins:
+  - serverless-python-requirements

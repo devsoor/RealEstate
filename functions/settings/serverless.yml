@@ -1,0 +1,102 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: settings
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/AppSettings"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Users"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants/index/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
+
+functions:
+  getSettings:
+    handler: handler.get_settings
+    events:
+      - http:
+          path: settings
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getTenantSettings:
+    handler: handler.get_tenant_settings
+    events:
+      - http:
+          path: settings/{tenant_id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+  getTenantSettingsBySiteName:
+    handler: handler.get_tenant_settings
+    events:
+      - http:
+          path: sites/{site_name}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                site_name: true
+  getPlatformSettings:
+    handler: handler.get_platform_settings
+    events:
+      - http:
+          path: settings
+          method: get
+          cors: true
+plugins:
+  - serverless-python-requirements

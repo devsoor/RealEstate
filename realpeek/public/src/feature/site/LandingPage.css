@@ -1,0 +1,63 @@
+.landing-page {
+  font-family: 'Raleway', sans-serif;
+  
+}
+
+.landing-page .Signup {
+  padding: 0;
+}
+.intro-section, .features {
+  color: #ffffff;
+}
+
+.features {
+  margin-top: 60px;
+}
+
+.feature-detail {
+  text-align: left;
+}
+
+.feature-detail.text-center {
+  text-align: center
+}
+.intro-video {
+  padding: 30px;
+}
+
+.section {
+  padding-top: 60px;
+  padding-bottom: 80px;
+  text-align: center;
+}
+
+.header-section {
+  background-color: #2b5973;
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+p.summary {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+  line-height: 30px;
+}
+
+.line-break {
+  background: #2b5973;
+  height: 1px;
+    width: 70px;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.feature {
+  margin-bottom: 35px;
+}
+
+.feature .icon {
+  font-size: 50px;
+  margin-bottom: 30px;
+  color: #2b5973;
+}

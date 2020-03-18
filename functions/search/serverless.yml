@@ -1,0 +1,243 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: search
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  environment:
+    stage: ${self:provider.stage}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "es:ESHttp*"
+      Resource:
+        "arn:aws:es:us-west-2:450322736372:domain/realpeek/*"
+    - Effect: "Allow"
+      Action: "lambda:InvokeFunction"
+      Resource:
+        - "arn:aws:lambda:us-west-2:450322736372:function:search-${self:provider.stage}-cmaCalculation"
+        - "arn:aws:lambda:us-west-2:450322736372:function:search-${self:provider.stage}-cmaCalculationAnalyze"
+        - "arn:aws:lambda:us-west-2:450322736372:function:rentimport-${self:provider.stage}-getRent"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/RentalStats"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Assumptions"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/PropertyTaxRates"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/PropertyTaxByCityRates"
+    - Effect: "Allow"
+      Action: "ssm:GetParameters"
+      Resource:
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/db*"
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/db_host"
+    - Effect: "Allow"
+      Action: "kms:Decrypt"
+      Resource:
+        - "arn:aws:kms:us-west-2:450322736372:alias/aws/ssm"
+    - Effect: "Allow"
+      Action:
+        - "sts:AssumeRole"
+      Resource:
+        - "arn:aws:iam::450322736372:role/*"
+
+functions:
+  publish:
+    handler: handler.publish_property_change
+  updateImagePaths:
+    handler: handler.update_image_paths
+  suggest:
+    handler: handler.suggest
+    events:
+      - http:
+          path: suggest
+          method: get
+          cors: true
+  searchInternal:
+    handler: handler.search_internal
+    timeout: 30
+  search:
+    handler: handler.search
+    timeout: 30
+    memorySize: 3008
+    events:
+      - http:
+          path: properties/search
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  searchBulk:
+    handler: handler.search_bulk
+    timeout: 30
+    memorySize: 3008
+    events:
+      - http:
+          path: properties/searchbulk
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  analyze:
+    handler: handler.analyze
+    timeout: 30
+    memorySize: 3008
+    events:
+      - http:
+          path: properties/analyze
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getProperty:
+    handler: handler.get_property
+    events:
+      - http:
+          path: properties/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+  cmaCalculation:
+    handler: handler.cma_calculation
+    timeout: 120
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+  cmaCalculationAnalyze:
+    handler: handler.cma_calculation_analyze
+    timeout: 30
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+  cmaCalculationHttp:
+    handler: handler.cma_calculation_http
+    timeout: 30
+    events:
+      - http:
+          path: properties/{id}/cma
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+  cmaCalculationAnalyzeHttp:
+    handler: handler.cma_calculation_analyze_http
+    timeout: 30
+    events:
+      - http:
+          path: properties/cmaanalyze
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getAssumptions:
+    handler: handler.get_assumptions
+    events:
+      - http:
+          path: assumptions/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: false
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  updateAssumptions:
+    handler: handler.update_assumptions
+    events:
+      - http:
+          path: assumptions/{id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: false
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getSearchOptions:
+    handler: handler.get_search_options
+    events:
+      - http:
+          path: properties/search/options
+          method: get
+          cors: true
+
+  getTotalActives:
+    handler: handler.get_total_actives
+    events:
+      - http:
+          path: properties/actives
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+              
+plugins:
+  - serverless-python-requirements

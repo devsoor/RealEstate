@@ -1,0 +1,18 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/realpeek; npm install
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/realpeek; npm run build
+  post_build:
+    commands:
+      #  sync all of the non asset files with no "cache-control" meta so they aren't cached by CloudFront
+      # --delete flag means that sync will delete any files in the bucket that are not in the build folder
+      - aws s3 sync --delete --exclude assets/* $CODEBUILD_SRC_DIR/realpeek/build/ "s3://${BUCKET_NAME}"
+      # sync asset files and set their "max-age" to one year. CloudFront will cache them based on this value
+      # - aws s3 sync --delete --cache-control "max-age=31536000" $CODEBUILD_SRC_DIR/realpeek/build/assets "s3://${BUCKET_NAME}/assets"
+      - aws configure set preview.cloudfront true
+      - aws cloudfront create-invalidation --distribution-id EMTBJ8MP1YVWZ --paths /index.html

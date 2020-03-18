@@ -1,0 +1,279 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: mlsimport # NOTE: update this with your service name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+resources:
+  Resources:
+    listingUpdated:
+        Type: AWS::SNS::Topic
+        Properties:
+          DisplayName: 'Listing updated or added from MLS'
+          TopicName: ListingUpdated-${self:provider.stage}
+  Outputs:
+    listingUpdatedSnsArn:
+      Value:
+        Ref: listingUpdated
+      Export:
+        Name: listingUpdatedSnsArn-${self:provider.stage}
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  scheduleEnabled: true
+  cullSchedule: cron(18 8 * * ? *)
+  listingUpdated:
+    Fn::Join:
+      - ":"
+      - - arn
+        - aws
+        - sns
+        - Ref: AWS::Region
+        - Ref: AWS::AccountId
+        - ListingUpdated-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  environment:
+    stage: ${self:provider.stage}
+    listingUpdatedTopic: ${self:custom.listingUpdated}
+  timeout: 300
+  vpc:
+    securityGroupIds:
+      - sg-098e6868e1e45ff01
+    subnetIds:
+      - subnet-07077f3f76c1d7137
+      - subnet-0912d902467ede69f
+      - subnet-054f51740dadffab4
+  iamManagedPolicies:
+    - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action: "ssm:GetParameters"
+      Resource:
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/db*"
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/nwmls_api_user"
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/nwmls_api_pw"
+    - Effect: "Allow"
+      Action: "kms:Decrypt"
+      Resource:
+        - "arn:aws:kms:us-west-2:450322736372:alias/aws/ssm"
+    - Effect: "Allow"
+      Action: 
+        - "*"
+      Resource:
+        - "arn:aws:s3:::realpeekimages"
+        - "arn:aws:s3:::realpeekimages/*"
+    - Effect: "Allow"
+      Action: "lambda:InvokeFunction"
+      Resource:
+        - "arn:aws:lambda:us-west-2:450322736372:function:mlsimport-${self:provider.stage}-initialLoad"
+        - "arn:aws:lambda:us-west-2:450322736372:function:mlsimport-${self:provider.stage}-updateListings"
+        - "arn:aws:lambda:us-west-2:450322736372:function:mlsimport-${self:provider.stage}-updateImagesForListing"
+        - "arn:aws:lambda:us-west-2:450322736372:function:mlsimport-${self:provider.stage}-updateSingleListing"
+        - "arn:aws:lambda:us-west-2:450322736372:function:search-${self:provider.stage}-updateImagePaths"
+    - Effect: 'Allow'
+      Action:
+        - "sns:Publish"
+      Resource:
+        - ${self:custom.listingUpdated}
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.js
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.js
+#    - exclude-me-dir/**
+package:
+  exclude:
+    - '*'
+    - '**'
+    - secrets.yml
+  include:
+    - config/**
+    - handler.js
+    - handler.php
+    - php
+    - src/**
+    - vendor/**
+
+  environment:
+    stage: ${self:provider.stage}
+
+functions:
+  updateListings:
+    handler: handler.handle
+    environment:
+      HANDLER: handler.updateListings  # This is the service name which will be used (from services.yml)
+    events:
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: RESI
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: COND
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: RENT
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MANU
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MULT
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: VACL
+  updateImages:
+    handler: handler.handle
+    reservedConcurrency: 20 # only allow 20 concurrent connections since the DB concurrent connections is limited
+    environment:
+      HANDLER: handler.updateImages  # This is the service name which will be used (from services.yml)
+    events:
+      - schedule:
+          rate: rate(10 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: RESI
+      - schedule:
+          rate: rate(10 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: COND
+      # - schedule:
+      #     rate: rate(10 minutes)
+      #     enabled: ${self:custom.scheduleEnabled}
+      #     input:
+      #       PropertyType: RENT
+      - schedule:
+          rate: rate(10 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MANU
+      - schedule:
+          rate: rate(10 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MULT
+      - schedule:
+          rate: rate(10 minutes)
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: VACL
+  updateImagesForListing:
+    handler: handler.handle
+    reservedConcurrency: 20 # only allow 20 concurrent connections since the DB concurrent connections is limited
+    environment:
+      HANDLER: handler.updateImagesForListing  # This is the service name which will be used (from services.yml)
+  updateSingleListing:
+    handler: handler.handle
+    reservedConcurrency: 20 # only allow 20 concurrent connections since the DB concurrent connections is limited
+    environment:
+      HANDLER: handler.updateSingleListing  # This is the service name which will be used (from services.yml)
+  initialLoad:
+    handler: handler.handle
+    environment:
+      HANDLER: handler.initialLoad
+  updateMembers:
+    handler: handler.handle
+    timeout: 300
+    events:
+      - schedule: 
+          rate: cron(20 9 * * ? *)
+    environment:
+      HANDLER: handler.updateMembers
+  updateOffices:
+    handler: handler.handle
+    timeout: 300
+    events:
+      - schedule: 
+          rate: cron(10 9 * * ? *)
+    environment:
+      HANDLER: handler.updateOffices
+  cullListings:
+    handler: handler.handle
+    environment:
+      HANDLER: handler.cullListings
+    events:
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: RESI
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: COND
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: RENT
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MANU
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: MULT
+      - schedule:
+          rate: ${self:custom.cullSchedule}
+          enabled: ${self:custom.scheduleEnabled}
+          input:
+            PropertyType: VACL

@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation Template for setting up a RealPeek environment'
+Resources:
+  sysAdminPolicy:
+    Type: AWS::IAM::Policy
+  Properties: 
+    Groups:
+    - Roles 
+  PolicyDocument: 
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "PassRole",
+                "Effect": "Allow",
+                "Action": [
+                    "iam:PassRole"
+                ],
+                "Resource": [
+                    "arn:aws:iam::450322736372:role/*"
+                ]
+            },
+            {
+                "Sid": "VisualEditor0",
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:PutItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "cognito-idp:ListUsers"
+                ],
+                "Resource": [
+                    "arn:aws:cognito-idp:us-west-2:450322736372:userpool/*",
+                    "arn:aws:dynamodb:us-west-2:450322736372:table/Assumptions",
+                    "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants",
+                    "arn:aws:dynamodb:us-west-2:450322736372:table/CompCriteria",
+                    "arn:aws:dynamodb:us-west-2:450322736372:table/CmaCriteria"
+                ]
+            },
+            {
+                "Sid": "ManageTenants",
+                "Effect": "Allow",
+                "Action": [
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:CreateGroup",
+                    "cognito-idp:CreateUserPool",
+                    "cognito-idp:DeleteUserPool",
+                    "cognito-idp:CreateUserPoolClient",
+                    "cognito-idp:AdminAddUserToGroup",
+                    "cognito-identity:CreateIdentityPool",
+                    "cognito-identity:DeleteIdentityPool",
+                    "cognito-idp:ListUsersInGroup",
+                    "iam:CreatePolicy",
+                    "iam:CreateRole",
+                    "iam:AttachRolePolicy",
+                    "iam:DeletePolicy",
+                    "iam:ListPolicyVersions",
+                    "iam:DeletePolicyVersion",
+                    "iam:DeleteRole",
+                    "iam:DetachRolePolicy"
+                ],
+                "Resource": [
+                    "*",
+                    "arn:aws:iam::450322736372:policy/",
+                    "arn:aws:cognito-identity:us-west-2:450322736372:identitypool/"
+                ]
+            },
+            {
+                "Sid": "DeleteTenantResources",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListObjects",
+                    "s3:DeleteObjects"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::realpeek-sites"
+                ]
+            }
+        ]
+    }
+  PolicyName: String
+  Roles:
+    - String
+  Users:
+    - String

@@ -1,0 +1,10 @@
+{
+  "name": "common",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {},
+  "devDependencies": {
+    "serverless-python-requirements": "^4.3.0",
+    "serverless-sam": "^0.2.0"
+  }
+}

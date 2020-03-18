@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/realpeek; npm install
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/realpeek
+      - cp ./.env.staging ./.env.production.local
+      - npm run build
+  post_build:
+    commands:
+      #  sync all of the non asset files with no "cache-control" meta so they aren't cached by CloudFront
+      # --delete flag means that sync will delete any files in the bucket that are not in the build folder
+      - aws s3 sync --delete --exclude assets/* $CODEBUILD_SRC_DIR/realpeek/build/ "s3://${BUCKET_NAME}"
+      # sync asset files and set their "max-age" to one year. CloudFront will cache them based on this value
+      - aws configure set preview.cloudfront true
+      - aws cloudfront create-invalidation --distribution-id E3JM8752RPKWPX --paths /index.html
+
+      # mlsimport: sls deploy --stage staging
+      # common: sls deploy --stage staging
+      # settings: sls deploy -- stage staging
+      # users: sls deploy -- stage staging
+      # search: sls deploy -- stage staging
+      # reports: sls deploy --stage staging
+      # rent_import: sls deploy --stage staging
+      # alerts: sls deploy --stage staging

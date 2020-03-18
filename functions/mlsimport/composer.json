@@ -1,0 +1,22 @@
+{
+  "name": "araines/serverless-php",
+  "description": "Boilerplate project for Serverless Framework and PHP",
+  "type": "project",
+  "autoload": {
+    "psr-4": {
+      "Raines\\Serverless\\": "src/Serverless",
+      "RealPeek\\": "src/RealPeek"
+    }
+  },
+  "require": {
+    "monolog/monolog": "^1.22",
+    "php": "^7.0",
+    "psr/log": "^1.0",
+    "symfony/config": "^4.0",
+    "symfony/dependency-injection": "^4.0",
+    "symfony/yaml": "^4.0",
+    "aws/aws-sdk-php-resources": "^0.3.0"
+  },
+  "require-dev": {
+  }
+}

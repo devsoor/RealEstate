@@ -1,0 +1,4 @@
+lambda-decorators
+cryptography==2.3
+python-jose
+pytz

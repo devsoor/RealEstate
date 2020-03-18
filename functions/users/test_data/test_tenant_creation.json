@@ -1,0 +1,26 @@
+{
+	"tenant_id": "",
+	"site_name": "johnagent",
+	"agent_name": "Agent Name",
+	"agent_title": "Agent Title",
+	"agent_email": "test_agent@paradigmsift.com",
+	"agent_phone": "4251234567",
+	"agent_photo": "Duane C21.JPG",
+	"agent_photo_data": {
+		
+	},
+	"office_name": "Brokerage Name",
+	"office_address_street": "123 Some Street",
+	"office_address_city": "Kirkland",
+	"office_address_state": "WA",
+	"office_address_zip": "98033",
+	"office_email": "test_brokerage@paradigmsift.com",
+	"logo_url": "Century 21 logo.png",
+	"logo_photo_data": {
+		
+	},
+	"logo_caption": "Century 21 Caption",
+	"admin_username": "pamela@paradigmsift.com",
+	"admin_email": "pamela@paradigmsift.com",
+	"temp_password": ""
+}

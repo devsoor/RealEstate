@@ -1,0 +1,201 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: portfolio
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  environment:
+    stage: ${self:provider.stage}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Portfolios"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/CmaCriteria"
+    - Effect: "Allow"
+      Action:
+        - "es:ESHttp*"
+      Resource:
+        "arn:aws:es:us-west-2:450322736372:domain/realpeek/*"
+    - Effect: "Allow"
+      Action: "lambda:InvokeFunction"
+      Resource:
+        - "arn:aws:lambda:us-west-2:450322736372:function:portfolio-${self:provider.stage}-cmaCalculationFolio"
+        - "arn:aws:lambda:us-west-2:450322736372:function:portfolio-${self:provider.stage}-cmaCalculationFolioHttp"
+        - "arn:aws:lambda:us-west-2:450322736372:function:rentimport-${self:provider.stage}-getRent"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/RentalStats"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Assumptions"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/PropertyTaxRates"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/PropertyTaxByCityRates"
+    - Effect: "Allow"
+      Action: "ssm:GetParameters"
+      Resource:
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/db*"
+        - "arn:aws:ssm:us-west-2:450322736372:parameter/db_host"
+    - Effect: "Allow"
+      Action: "kms:Decrypt"
+      Resource:
+        - "arn:aws:kms:us-west-2:450322736372:alias/aws/ssm"
+    - Effect: "Allow"
+      Action:
+        - "sts:AssumeRole"
+      Resource:
+        - "arn:aws:iam::450322736372:role/*"
+
+functions:
+  createFolioProperty:
+    handler: handler.create_folio_property
+    events:
+      - http:
+          path: portfolio
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  updateFolioProperty:
+    handler: handler.update_folio_property
+    timeout: 30
+    events:
+      - http:
+          path: portfolio/{id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getFolioProperty:
+    handler: handler.get_folio_property
+    events:
+      - http:
+          path: portfolio/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getFolioProperties:
+    handler: handler.get_folio_properties
+    timeout: 30
+    events:
+      - http:
+          path: portfolio
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteFolioProperty:
+    handler: handler.delete_folio_property
+    events:
+      - http:
+          path: portfolio/{id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  analyzeFolio:
+    handler: handler.analyze_folio
+    timeout: 30
+    memorySize: 3008
+    events:
+      - http:
+          path: portfolio/analyze
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  cmaCalculationFolio:
+    handler: handler.cma_calculation_folio
+    timeout: 120
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+  cmaCalculationFolioHttp:
+    handler: handler.cma_calculation_http_folio
+    timeout: 30
+    events:
+      - http:
+          path: portfolio/{id}/cma
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+    vpc:
+      securityGroupIds:
+        - sg-098e6868e1e45ff01
+      subnetIds:
+        - subnet-07077f3f76c1d7137
+        - subnet-0912d902467ede69f
+        - subnet-054f51740dadffab4
+plugins:
+  - serverless-python-requirements

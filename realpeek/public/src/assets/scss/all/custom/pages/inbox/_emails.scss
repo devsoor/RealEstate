@@ -1,0 +1,92 @@
+.email-app {
+  position: relative;
+
+  .list-group {
+    .list-group-item {
+      padding: 0px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      .list-group-item-action {
+        padding: 12px 15px;
+        display: block;
+        color: $body-color;
+        .mdi {
+          font-size: 18px;
+          vertical-align: middle;
+          margin-right: 5px;
+        }
+        &:hover,
+        &.active {
+          background: rgba(0, 0, 0, 0.03);
+        }
+      }
+    }
+  }
+  .email-table {
+    table-layout: fixed;
+    .selected {
+      background: $gray-100;
+    }
+
+    .max-texts,
+    .user-name h6 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .max-texts {
+      padding: 1rem 5px;
+    }
+    .chb {
+      width: 50px;
+    }
+    .time {
+      width: 100px;
+      text-align: right;
+    }
+    .starred,
+    .clip,
+    .important,
+    .user-image {
+      width: 45px;
+      padding: 1rem 10px;
+    }
+    .user-name {
+      width: 130px;
+      padding: 1rem 5px;
+      .m-b-0 {
+        font-weight: $font-weight-light;
+      }
+    }
+    .unread {
+      .m-b-0,
+      .max-texts {
+        font-weight: $font-weight-bold;
+      }
+    }
+  }
+  .mail-list,
+  .mail-details {
+    .empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .email-table {
+    min-width: 500px;
+  }
+}
+
+.v-middle {
+    td,
+    th {
+        vertical-align: middle;
+    }
+}

@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation Template for setting up a RealPeek environment'
+Parameters:
+  ReadCapacityUnits:
+    Description: Provisioned read throughput
+    Type: Number
+    Default: '5'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+  WriteCapacityUnits:
+    Description: Provisioned write throughput
+    Type: Number
+    Default: '10'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+Resources:
+  dynamoDBRentalStatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 'RentalStats'
+      AttributeDefinitions:
+      - AttributeName: 'address'
+        AttributeType: 'N'
+      - AttributeName: 'bedrooms'
+        AttributeType: 'N'
+      KeySchema:
+      - AttributeName: 'address'
+        KeyType: HASH
+      - AttributeName: 'bedrooms'
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref 'ReadCapacityUnits'
+        WriteCapacityUnits: !Ref 'WriteCapacityUnits'
+  dynamoDBReportsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: 'Reports'
+        KeySchema:
+        - AttributeName: 'owner'
+          KeyType: HASH
+        - AttributeName: 'id'
+          KeyType: RANGE
+        AttributeDefinitions:
+        - AttributeName: 'owner'
+          AttributeType: 'S'
+        - AttributeName: 'id'
+          AttributeType: 'S'
+        ProvisionedThroughput:
+          ReadCapacityUnits: !Ref 'ReadCapacityUnits'
+          WriteCapacityUnits: !Ref 'WriteCapacityUnits'
+  dynamoDBSavedSearchesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: 'SavedSearches'
+        KeySchema:
+        - AttributeName: 'owner'
+          KeyType: HASH
+        - AttributeName: 'id'
+          KeyType: RANGE
+        AttributeDefinitions:
+        - AttributeName: 'owner'
+          AttributeType: 'S'
+        - AttributeName: 'id'
+          AttributeType: 'S'
+        ProvisionedThroughput:
+          ReadCapacityUnits: !Ref 'ReadCapacityUnits'
+          WriteCapacityUnits: !Ref 'WriteCapacityUnits'
+        StreamSpecification: 'NEW_IMAGE'

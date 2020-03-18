@@ -1,0 +1,4 @@
+lambda-decorators
+troposphere
+simplejson
+dynamodb-json

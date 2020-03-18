@@ -1,0 +1,32 @@
+.gm-style-iw {
+    top: 9px; position: absolute; left: 15px; width: 248px;
+}
+
+.info-window {
+   display: inline-block; overflow: hidden; max-height: 811px; max-width: 654px;
+   width: 270px;
+}
+
+.info-window .figure-block {
+    float:left;
+    padding-right: 10px;
+}
+
+.info-window .item-address-street, .info-window .item-address-city, .info-window .price {
+    display: block;
+}
+
+.info-window .info-row {
+    margin-bottom: 5px;
+}
+.info-window .price {
+    font-size: 1.5em;
+}
+.info-window .info-row.amenities span {
+    padding-right: 5px;
+    margin-right: 5px;
+    border-right: 1px solid lightgray;
+}
+.info-window .item-address-city {
+
+}

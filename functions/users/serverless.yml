@@ -1,0 +1,258 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: users
+
+resources:
+  Resources:
+    UserSignupQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "UserSignupQueue-${self:provider.stage}"
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  environment: 
+    stage: ${self:provider.stage}
+    userSignupQueue:
+      Ref: UserSignupQueue
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:Scan"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Users"
+    - Effect: "Allow"
+      Action:
+        - "cognito-idp:AdminGetUser"
+        - "cognito-idp:AdminAddUserToGroup"
+        - "cognito-idp:ListUsersInGroup"
+      Resource:
+        - "arn:aws:cognito-idp:us-west-2:450322736372:userpool/*"
+    - Effect: "Allow"
+      Action:
+        - "cognito-idp:CreateUserPool"
+      Resource:
+        - "*"
+    - Effect: "Allow"
+      Action:
+        - "sts:AssumeRole"
+      Resource:
+        - "arn:aws:iam::450322736372:role/*"
+    - Effect: "Allow"
+      Action:
+        - "ses:SendEmail"
+      Resource:
+        - "arn:aws:ses:us-west-2:450322736372:identity/realpeek.com"
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "sqs:SendMessageBatch"
+        - "sqs:GetQueueUrl"
+      Resource:
+        Fn::GetAtt:
+          - UserSignupQueue
+          - Arn
+functions:
+  createTenant:
+    handler: handler.create_tenant
+    timeout: 30
+    events:
+      - http:
+          path: tenants
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  createTenantResources:
+    handler: handler.create_tenant_resources
+    timeout: 300
+  getTenants:
+    handler: handler.get_tenants
+    events:
+      - http:
+          path: tenants
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  updateTenant:
+    handler: handler.update_tenant
+    events:
+      - http:
+          path: tenants/{tenant_id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteTenant:
+    handler: handler.delete_tenant
+    events:
+      - http:
+          path: tenants/{tenant_id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  userSignUp:
+    handler: handler.user_sign_up
+    events:
+      - http:
+          path: tenants/{tenant_id}/users/register
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+  createUser:
+    handler: handler.create_user
+    events:
+      - http:
+          path: tenants/{tenant_id}/users
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getUsers:
+    handler: handler.get_users
+    events:
+      - http:
+          path: tenants/{tenant_id}/users
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteUser:
+    handler: handler.delete_user
+    events:
+      - http:
+          path: tenants/{tenant_id}/users/{email}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+                email: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getMembers:
+    handler: handler.get_members
+    events:
+      - http:
+          path: tenants/{tenant_id}/members
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  createMember:
+    handler: handler.create_member
+    events:
+      - http:
+          path: tenants/{tenant_id}/members
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteMember:
+    handler: handler.delete_member
+    events:
+      - http:
+          path: tenants/{tenant_id}/members/{email}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                tenant_id: true
+                email: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  notifyOnSignup:
+    handler: handler.notify_on_signup
+    events:
+      - sqs:
+          batchSize: 1
+          arn:
+            Fn::GetAtt:
+              - UserSignupQueue
+              - Arn
+  createTenantTest:
+    handler: handler.create_tenant_test
+  deleteTenantTest:
+    handler: handler.delete_tenant_test
+  cfTest:
+    handler: handler.cf_test
+plugins:
+  - serverless-python-requirements

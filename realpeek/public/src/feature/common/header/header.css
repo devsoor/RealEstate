@@ -1,0 +1,31 @@
+.nav.navbar-nav {
+    min-height: 60px;
+}
+.navbar-brand {
+    padding: 0px 20px;
+}
+.navbar-brand.logo img {
+    height: 45px;
+    width: auto;
+}
+
+.navbar-brand.logo .logo-caption {
+    font-size: 12px;
+    text-align: center;
+}
+
+.navbar .report-image img {
+    height: 45px;
+    margin-bottom: 10px;
+}
+
+.navbar {
+    margin-bottom: 0px;
+}
+
+@media (min-width: 768px) {
+    .navbar-nav > li > a {
+        padding-top: 10px;
+        padding-bottom:10px;
+    }
+}

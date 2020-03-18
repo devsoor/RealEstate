@@ -1,0 +1,220 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: reports
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  stage: ${opt:stage, 'rpdash'}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': apiGateway-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:GetItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Tenants"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/Reports"
+        - "arn:aws:dynamodb:us-west-2:450322736372:table/SavedSearches"
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
+
+functions:
+  createReport:
+    handler: handler.create_report
+    events:
+      - http:
+          path: reports
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getReport:
+    handler: handler.get_report
+    events:
+      - http:
+          path: reports/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getReports:
+    handler: handler.get_reports
+    timeout: 30
+    events:
+      - http:
+          path: reports
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteReport:
+    handler: handler.delete_report
+    events:
+      - http:
+          path: reports/{id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM # TOKEN or COGNITO_USER_POOLS, same as AWS Cloudformation documentation
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  updateReport:
+    handler: handler.update_report
+    timeout: 30
+    events:
+      - http:
+          path: reports/{id}
+          method: patch
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  createSavedSearch:
+    handler: handler.create_saved_search
+    events:
+      - http:
+          path: savedsearches
+          method: post
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  updateSavedSearch:
+    handler: handler.update_saved_search
+    timeout: 30
+    events:
+      - http:
+          path: savedsearches/{id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getSavedSearch:
+    handler: handler.get_saved_search
+    events:
+      - http:
+          path: savedsearches/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  getSavedSearches:
+    handler: handler.get_saved_searches
+    timeout: 30
+    events:
+      - http:
+          path: savedsearches
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+  deleteSavedSearch:
+    handler: handler.delete_saved_search
+    events:
+      - http:
+          path: savedsearches/{id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              'Fn::ImportValue': apiGateway-${self:provider.stage}-AuthorizerId
+plugins:
+  - serverless-python-requirements
+

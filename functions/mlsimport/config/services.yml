@@ -1,0 +1,52 @@
+parameters:
+  logging_level: !php/const Monolog\Logger::INFO
+
+services:
+  logger:
+    public: true
+    class: Monolog\Logger
+    arguments:
+      - 'handler'
+    calls:
+      - [pushHandler, ['@logging.handler']]
+
+  logging.formatter:
+    class: Monolog\Formatter\LineFormatter
+    public: false
+    arguments:
+      - '%%message%% %%context%% %%extra%%'
+
+  logging.handler:
+    class: Monolog\Handler\StreamHandler
+    public: false
+    arguments:
+      - 'php://stderr'
+      - '%logging_level%'
+    calls:
+      - [setFormatter, ['@logging.formatter']]
+
+# Define your own handlers and other services here
+  handler.updateListings:
+    public: true
+    class: RealPeek\UpdateListingsHandler
+  handler.updateImages:
+    public: true
+    class: RealPeek\UpdateImagesHandler
+  handler.updateImagesForListing:
+    public: true
+    class: RealPeek\UpdateImagesForListingHandler
+  handler.updateSingleListing:
+    public: true
+    class: RealPeek\UpdateSingleListingHandler
+  handler.initialLoad:
+    public: true
+    class: RealPeek\InitialMlsLoadHandler
+  handler.cullListings:
+    public: true
+    class: RealPeek\CullListingsHandler
+  handler.updateMembers:
+    public: true
+    class: RealPeek\UpdateMembersHandler
+  handler.updateOffices:
+    public: true
+    class: RealPeek\UpdateOfficesHandler

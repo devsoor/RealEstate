@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation Template for setting up Build Pipelines'
+Resources:
+  s3AppBucketDev:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: PublicRead
+      BucketName: realpeek-app-dev
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+  s3AppBucketProd:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: PublicRead
+      BucketName: realpeek-app
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html

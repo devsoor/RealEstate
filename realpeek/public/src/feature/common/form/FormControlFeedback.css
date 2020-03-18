@@ -1,0 +1,8 @@
+
+
+.form-group.has-success .feedback {
+  color: #3c763d;
+}
+.form-group.has-error .feedback {
+  color: #a94442;
+}

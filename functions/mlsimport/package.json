@@ -1,0 +1,14 @@
+{
+  "name": "mlsimport",
+  "version": "1.0.0",
+  "description": "Since mlsimport uses a php binary, it is necessary to sls deploy it using a linux/unix machine. One solution is to use docker. Follow the instructions below. 1. Install docker 2. `cd functions` 3. `docker build mlsimport` 4. run `docker images` and find the image_id 5. to deploy, run `docker run -e AWS_ACCESS_KEY_ID={key_here} -e AWS_SECRET_ACCESS_KEY={key_here} {image_id}`",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "aws-sdk": "^2.469.0"
+  }
+}

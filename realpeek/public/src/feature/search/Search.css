@@ -1,0 +1,36 @@
+.edit-assumptions-modal {
+    width: 100%;
+}
+
+.icon-ok {
+    color: green;
+}
+
+.search-form-group [class*="col-"] {
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+.search-form-group [class*="col-"]:first-child {
+    padding-left: 15px;
+}
+.search-form-group [class*="col-"]:last-child {
+    padding-right: 15px;
+}
+
+.padding-0 {
+    padding-right:0;
+    padding-left:0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.badge-font {
+    font-size: 24px;
+    color: "#FFF";
+    text-align: center;
+}
+
+.adv-search {
+    background-color: "bg-info"
+}
